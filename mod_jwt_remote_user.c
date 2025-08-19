@@ -6,9 +6,29 @@
 #include "apr_strings.h"
 #include <string.h>
 #include <stdlib.h>
-
+module AP_MODULE_DECLARE_DATA bearer_remote_user_module;
+typedef struct {
+    const char *jwt_remote_user_claim;
+} jwt_remote_user_claim_config;
 /* Base64 URL decoding table */
 static unsigned char b64url_table[256];
+
+static void *create_jwt_remote_user_claim_config(apr_pool_t *p, server_rec *s) {
+    jwt_remote_user_claim_config *conf = apr_pcalloc(p, sizeof(*conf));
+    conf->jwt_remote_user_claim = "preferred_username"; // Default value
+    return conf;
+}
+
+static const char *set_jwt_remote_user_claim(cmd_parms *cmd, void *cfg, const char *arg) {
+    jwt_remote_user_claim_config *conf = (jwt_remote_user_claim_config *) ap_get_module_config(cmd->server->module_config, &bearer_remote_user_module);
+    conf->jwt_remote_user_claim = arg;
+    return NULL;
+}
+
+static const command_rec jwt_remote_user_claim_cmds[] = {
+    AP_INIT_TAKE1("JWTRemoteUserClaim", set_jwt_remote_user_claim, NULL, RSRC_CONF, "The JWT remote user claim value"),
+    {NULL}
+};
 
 static void init_b64url_table() {
     memset(b64url_table, 0x80, 256);
@@ -56,8 +76,8 @@ static unsigned char *base64url_decode(apr_pool_t *p, const char *data, int *out
     return out;
 }
 
-static const char *extract_preferred_username(apr_pool_t *p, const char *json, int len) {
-    const char *key = "\"preferred_username\"";
+static const char *extract_preferred_username(apr_pool_t *p, const char *json, int len, const char *key) {	
+	
     const char *pos = strstr(json, key);
     if (!pos) return NULL;
 
@@ -84,7 +104,9 @@ static int bearer_remote_user_handler(request_rec *r) {
 
     const char *token = auth + 7;
     char *token_copy = apr_pstrdup(r->pool, token);
-
+	jwt_remote_user_claim_config *conf = (jwt_remote_user_claim_config *) ap_get_module_config(r->server->module_config, &bearer_remote_user_module);
+ 
+	//ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, "Value of JWTRemoteUserClaim  = %s", conf->jwt_remote_user_claim);
     // Split JWT
     char *dot1 = strchr(token_copy, '.');
     if (!dot1) return DECLINED;
@@ -101,17 +123,19 @@ static int bearer_remote_user_handler(request_rec *r) {
         ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "Failed to decode JWT payload");
         return HTTP_UNAUTHORIZED;
     }
-
-    const char *username = extract_preferred_username(r->pool, (const char *)payload_json, payload_len);
+    const char *key = (const char *)malloc(sizeof(conf->jwt_remote_user_claim) + 2);
+	sprintf(key,"\"%s\"", conf->jwt_remote_user_claim);
+	//ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, "Extract value of key  = %s", key);
+    const char *username = extract_preferred_username(r->pool, (const char *)payload_json, payload_len, key);
+	free(key);
     if (!username) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "preferred_username not found in JWT");
-        return HTTP_UNAUTHORIZED;
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "%s not found in JWT",conf->jwt_remote_user_claim);
     }
 
     apr_table_set(r->subprocess_env, "REMOTE_USER", username);
     r->user = apr_pstrdup(r->pool, username);
 
-    ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, "Set REMOTE_USER = %s", username);
+    //ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, "Set REMOTE_USER = %s", username);
 
     return OK;
 }
@@ -123,7 +147,9 @@ static void bearer_remote_user_register_hooks(apr_pool_t *p) {
 
 module AP_MODULE_DECLARE_DATA bearer_remote_user_module = {
     STANDARD20_MODULE_STUFF,
-    NULL, NULL, NULL, NULL,
-    NULL,
+    NULL, NULL, 
+	create_jwt_remote_user_claim_config, 
+	NULL,
+    jwt_remote_user_claim_cmds,
     bearer_remote_user_register_hooks
 };
