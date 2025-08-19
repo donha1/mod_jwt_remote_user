@@ -4,7 +4,7 @@ Download latest httpd lib for windows, extract to a folder D:\httpd-latest, from
 On windows witih MSVS installed:
 
 # Compile, link, build
-build.cmd
+build.cmd<br>
 copy the output, mod_jwt_remote_user.so, to modules folder of Apache
 # Usage
 Add this line to Apache conf:
