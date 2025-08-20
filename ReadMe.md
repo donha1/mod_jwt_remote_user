@@ -18,5 +18,6 @@ JWTRemoteUserClaim  email<br>
 
 Sample log entry with userid:
 
-192.168.4.239 - jsmith [13/Aug/2025:15:17:34 -0400] "PUT /rest-api/claims/claims/4678086/subresources/claimant/address HTTP/2.0" 200 114
+192.168.4.239 - jsmith [13/Aug/2025:15:17:34 -0400] "PUT /rest-api/claims/4678086/subresources/address HTTP/2.0" 200 114
+
 
