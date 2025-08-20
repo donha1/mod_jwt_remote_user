@@ -15,4 +15,5 @@ To override this default claim, add this line to conf to change username claim t
 JWTRemoteUserClaim  email<br>
 
 Sample log entry with userid:
-192.168.4.239 - dha [13/Aug/2025:15:17:34 -0400] "PUT /vwc-casper-rest-api/claims/claims/3678086/subresources/RELATED_PARTIES/claimant/address HTTP/2.0" 400 114
+
+192.168.4.239 - jsmith [13/Aug/2025:15:17:34 -0400] "PUT /rest-api/claims/claims/4678086/subresources/claimant/address HTTP/2.0" 200 114
