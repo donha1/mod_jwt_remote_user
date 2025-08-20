@@ -1,3 +1,5 @@
+# Overview
+This Apache module, writen in c for Windows, parses JWTs from Bearer tokens and maps a claim (like preferred_username). Its purpose is to extract a username (or other configured claim) from a JSON Web Token (JWT) passed in the HTTP Authorization: Bearer <token> header and set it as the Apache environment variable REMOTE_USER.
 # Prepare
 Install MSVS if not yet installed.
 Download latest httpd lib for windows, extract to a folder D:\httpd-latest, from https://www.apachelounge.com/download/. 
@@ -17,3 +19,4 @@ JWTRemoteUserClaim  email<br>
 Sample log entry with userid:
 
 192.168.4.239 - jsmith [13/Aug/2025:15:17:34 -0400] "PUT /rest-api/claims/claims/4678086/subresources/claimant/address HTTP/2.0" 200 114
+
